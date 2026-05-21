@@ -30,6 +30,7 @@ openbridge-offline-relay/
 ├── mobile-client/          # Offline wallet signer & Mesh networking client (Coming Soon)
 ├── docs/                   # System architecture and specifications
 └── README.md
+   ```
 ---
 
 ## 🛠️ Gateway Server Quick Start
@@ -41,6 +42,7 @@ The gateway server is fully containerized and can be deployed instantly using Do
 - An Ethereum RPC node URL (e.g., Infura, Alchemy, or Cloudflare).
 
 ### Deployment
+
 1. Build the Docker image:
 ```bash  
    docker build -t openbridge-relay ./gateway-server
