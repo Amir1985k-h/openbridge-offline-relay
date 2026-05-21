@@ -1,20 +1,38 @@
-# ۱. استفاده از نسخه پایدار و سبک نود جی‌اس
-FROM node:20-alpine
+# ====================== Builder Stage ======================
+FROM node:20-alpine AS builder
 
-# ۲. تعیین پوشه کاری درون کانتینر
 WORKDIR /usr/src/app
 
-# ۳. کپی کردن فایل‌های تعاریف پروژه
+# کپی فقط فایل‌های وابستگی برای caching بهتر
 COPY package*.json ./
 
-# ۴. نصب نیازمندی‌های پروژه بدون دانلود کدهای اضافی
-RUN npm ci --only=production
+# نصب همه dependencies (شامل dev برای build اگر لازم باشه)
+RUN npm ci --frozen-lockfile
 
-# ۵. کپی کردن کل کدهای سرور به داخل کانتینر
+# کپی کد منبع
 COPY . .
 
-# ۶. باز کردن پورت ۳۰۰۰ سرور
+# ====================== Production Stage ======================
+FROM node:20-alpine AS production
+
+# ایجاد کاربر غیر root برای امنیت
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S -u 1001 -G nodejs nodejs
+
+WORKDIR /usr/src/app
+
+# کپی فقط production dependencies از مرحله قبل
+COPY --from=builder --chown=nodejs:nodejs /usr/src/app/package*.json ./
+COPY --from=builder --chown=nodejs:nodejs /usr/src/app/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /usr/src/app/src ./src
+
+# مجوزهای امن
+USER nodejs
+
 EXPOSE 3000
 
-# ۷. دستور نهایی برای اجرای سرور رله
-CMD [ "npm", "start" ]
+# Healthcheck (اختیاری ولی توصیه می‌شه)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+
+CMD ["npm", "start"]
