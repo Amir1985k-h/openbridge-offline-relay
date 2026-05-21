@@ -13,6 +13,9 @@ By bypassing traditional internet requirements at the physical layer, OpenBridge
 * **SMS-to-Web3 Gateway:** Compresses signed raw transactions into light, hex-encoded payloads and relays them via cellular network text messages to open-net node gateways.
 * **P2P Mesh Routing:** Uses local WiFi and Bluetooth mesh networks to dynamically route data until it reaches an active edge node.
 * **Censorship Resistant:** Built specifically for users in heavily restricted jurisdictions to safeguard financial freedom and digital sovereignty.
+* **📦 SMS Payload Optimization:** Due to the 160-character limitation of standard SMS protocols, the mobile client includes a proprietary multi-part payload splitter (`payload-splitter.js`). It compresses, identifies, and tags sequential raw hexadecimal strings using the optimized standard format: `OB:[TxID]:[Total]:[Index]:[DataHex]`, ensuring ordered assembly and 100% data integrity at the gateway server.
+
+  
 
 ---
 
