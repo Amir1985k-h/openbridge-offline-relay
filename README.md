@@ -40,46 +40,21 @@ The gateway server is fully containerized and can be deployed instantly using Do
 
 ### Deployment
 1. Build the Docker image:
-  
+
    cd gateway-server
 docker build -t openbridge/relay:latest .
    
-   
-2. Run the container (replace with your RPC provider):
   
+2. Run the container (replace with your RPC provider):
+ 
    docker run -d \
   --name openbridge-relay \
   -p 3000:3000 \
   --env-file .env \
   --restart unless-stopped \
   openbridge/relay:latest
-      
-
-3. Docker Compose (Recommended)Create docker-compose.yml file in the gateway-server folder: 
+    
  
-version: '3.8'
-
-services:
-  relay:
-    build: .
-    container_name: openbridge-relay
-    ports:
-      - "3000:3000"
-    env_file:
-      - .env
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-   
-Run with:
-docker compose up -d
-   
-Quick Test 
-curl http://localhost:3000/health
-   
 ---
 
 ## 🗺️ Strategic Roadmap (2026 - 2027)
