@@ -40,21 +40,13 @@ The gateway server is fully containerized and can be deployed instantly using Do
 
 ### Deployment
 1. Build the Docker image:
-
-   cd gateway-server
-docker build -t openbridge/relay:latest .
-   
   
+   docker build -t openbridge-relay ./gateway-server
+   
 2. Run the container (replace with your RPC provider):
- 
-   docker run -d \
-  --name openbridge-relay \
-  -p 3000:3000 \
-  --env-file .env \
-  --restart unless-stopped \
-  openbridge/relay:latest
-    
- 
+  
+   docker run -d -p 3000:3000 -e RPC_URL="https://cloudflare-eth.com" openbridge-relay
+   
 ---
 
 ## 🗺️ Strategic Roadmap (2026 - 2027)
