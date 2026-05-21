@@ -1,33 +1,35 @@
 
 # OpenBridge: Offline Web3 Survival Infrastructure 🌐⛓️
 
-OpenBridge is a decentralized, censorship-resistant infrastructure designed to ensure digital and financial survival during total internet blackouts and severe network restrictions. 
+**OpenBridge** یک زیرساخت غیرمتمرکز و مقاوم در برابر سانسور است که برای بقا دیجیتال و مالی در شرایط قطعی کامل اینترنت و محدودیت‌های شدید شبکه طراحی شده. 
 
-By bypassing traditional internet requirements at the physical layer, OpenBridge allows users to securely sign and broadcast Web3 transactions using alternative routing methods.
+By bypassing traditional internet requirements at the physical layer, OpenBridge allows users to securely sign and broadcast Web3 transactions using alternative routing methods (SMS + Mesh Networks).
 
 ---
 
 ## 🚀 Key Features
 
-* Offline EVM Signing: Securely sign transactions on mobile clients (Android/iOS) completely offline with zero data leaks.
-* SMS-to-Web3 Gateway: Compresses signed raw transactions into light, hex-encoded payloads and relays them via cellular network text messages to open-net node gateways.
-* P2P Mesh Routing: Uses local WiFi and Bluetooth mesh networks to dynamically route data until it reaches an active edge node.
-* Censorship Resistant: Built specifically for users in heavily restricted jurisdictions to safeguard financial freedom and digital sovereignty.
-* 📦 SMS Payload Optimization: Due to the 160-character limitation of standard SMS protocols, the mobile client includes a proprietary multi-part payload splitter (payload-splitter.js). It compresses, identifies, and tags sequential raw hexadecimal strings using the optimized standard format: OB:[TxID]:[Total]:[Index]:[DataHex], ensuring ordered assembly and 100% data integrity at the gateway server.
-
-  
+* **Offline EVM Signing:** Securely sign transactions on mobile clients (Android/iOS) completely offline with zero data leaks.
+* **SMS-to-Web3 Gateway:** Compresses signed raw transactions into light, hex-encoded payloads and relays them via cellular network text messages to open-net node gateways.
+* **P2P Mesh Routing:** Uses local WiFi and Bluetooth mesh networks to dynamically route data until it reaches an active edge node.
+* **Censorship Resistant:** Built specifically for users in heavily restricted jurisdictions to safeguard financial freedom and digital sovereignty.
+* **📦 SMS Payload Optimization:** Due to the 160-character limitation of standard SMS protocols, the mobile client includes a proprietary multi-part payload splitter (`payload-splitter.js`). It compresses, identifies, and tags sequential raw hexadecimal strings using the optimized standard format: `OB:[TxID]:[Total]:[Index]:[DataHex]`, ensuring ordered assembly and 100% data integrity at the gateway server.
 
 ---
 
 ## 📁 Repository Architecture
 
+```text
 openbridge-offline-relay/
 ├── gateway-server/         # Node.js backend to parse SMS & broadcast to Ethereum
 │   ├── src/                # Core logic (app.js & web3-broadcaster.js)
 │   ├── Dockerfile          # Containerized deployment settings
-│   └── package.json        # Dependencies (Ethers.js, Express)
+│   ├── package.json
+│   ├── .env
+│   └── .env.example
 ├── mobile-client/          # Offline wallet signer & Mesh networking client (Coming Soon)
-└── docs/                   # System architecture and specifications
+├── docs/                   # System architecture and specifications
+└── README.md
 ---
 
 ## 🛠️ Gateway Server Quick Start
