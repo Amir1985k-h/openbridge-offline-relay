@@ -1,32 +1,57 @@
+// gateway-server/src/web3-broadcaster.js
 const { ethers } = require("ethers");
 
 /**
- * دریافت رشته هگزادسیمال تراکنش امضاشده آفلاین و پخش آن در شبکه اتریوم
- * @param {string} rawTransactionPayload - تراکنش امضاشده به صورت هگز از طریق SMS
- * @param {string} rpcUrl - آدرس گره شبکه اتریوم (RPC)
+ * پخش تراکنش خام امضاشده آفلاین در شبکه اتریوم
+ * @param {string} rawTransactionPayload - تراکنش امضاشده (0x hex)
+ * @param {string} rpcUrl - آدرس RPC (اختیاری)
  */
-async function broadcastOfflineTransaction(rawTransactionPayload, rpcUrl) {
+async function broadcastOfflineTransaction(rawTransactionPayload, rpcUrl = "https://eth.llamarpc.com") {
     try {
-        // ۱. اتصال به گره شبکه (Provider)
+        // اعتبارسنجی قوی ورودی
+        if (typeof rawTransactionPayload !== 'string' || !rawTransactionPayload.startsWith('0x')) {
+            throw new Error("Invalid payload: must be a 0x-prefixed hex string");
+        }
+
+        if (rawTransactionPayload.length < 10) {
+            throw new Error("Payload too short to be a valid transaction");
+        }
+
         const provider = new ethers.JsonRpcProvider(rpcUrl);
         
-        console.log("Connecting to the Ethereum network...");
-        
-        // ۲. ارسال تراکنش خام امضاشده به شبکه
+        console.log(`🌐 Broadcasting to RPC: ${rpcUrl}`);
+
         const txResponse = await provider.broadcastTransaction(rawTransactionPayload);
         
-        console.log(`🚀 Transaction successfully broadcasted!`);
-        console.log(`Transaction Hash: ${txResponse.hash}`);
-        
+        console.log(`✅ Transaction broadcasted successfully!`);
+        console.log(`🔗 Tx Hash: ${txResponse.hash}`);
+
         return {
             success: true,
-            hash: txResponse.hash
+            hash: txResponse.hash,
+            provider: rpcUrl
         };
+
     } catch (error) {
-        console.error("❌ Failed to broadcast transaction:", error.message);
+        console.error("❌ Broadcast failed:", error.message);
+
+        let friendlyError = error.message;
+
+        if (error.message.includes("already known") || error.message.includes("already in mempool")) {
+            friendlyError = "تراکنش قبلاً در شبکه ارسال شده است";
+        } else if (error.message.includes("nonce too low")) {
+            friendlyError = "Nonce خیلی پایین است (احتمال replay attack)";
+        } else if (error.code === 'SERVER_ERROR' || error.message.includes("network")) {
+            friendlyError = "مشکل اتصال به RPC - لطفاً بعداً امتحان کنید";
+        } else if (error.message.includes("insufficient funds")) {
+            friendlyError = "موجودی حساب کافی نیست";
+        }
+
         return {
             success: false,
-            error: error.message
+            error: friendlyError,
+            originalError: error.message,
+            code: error.code
         };
     }
 }
