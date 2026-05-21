@@ -4,11 +4,15 @@
   "description": "Offline transaction signer and mesh network client for OpenBridge",
   "main": "src/crypto/offline-signer.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "echo \"Build not implemented yet\"",
+    "dev": "echo \"Mobile dev environment not set up yet\""
   },
   "dependencies": {
     "ethers": "^6.13.0"
   },
-  "author": "OpenBridge Team",
-  "license": "MIT"
+  "devDependencies": {},
+  "author": "Amir1985k-h / OpenBridge Team",
+  "license": "MIT",
+  "keywords": ["openbridge", "offline-signer", "ethereum", "sms-relay", "mesh-network"]
 }
