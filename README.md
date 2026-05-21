@@ -1,3 +1,4 @@
+
 # OpenBridge: Offline Web3 Survival Infrastructure 🌐⛓️
 
 OpenBridge is a decentralized, censorship-resistant infrastructure designed to ensure digital and financial survival during total internet blackouts and severe network restrictions. 
