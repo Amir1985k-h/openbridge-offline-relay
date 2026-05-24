@@ -70,5 +70,23 @@ We are actively building based on our Strategic Roadmap for Offline Digital Surv
 
 ---
 
+👥️ How to Contribute & Give Feedback
+
+We are in early stage and actively looking for:
+
+* Brutal technical feedback
+* Security review & audit suggestions
+* Contributors (Node.js, React Native, Mesh Networking, Cryptography)
+* Testers from regions with internet restrictions
+
+Ways to help:
+
+1.Open an Issue with your feedback
+2.Start a discussion in GitHub Discussions (./discussions)
+3.Submit Pull Requests
+4.Star the repo if you find it valuable ⭐️
+
+---
+
 ## ⚖️ License
 This project is open-source and licensed under the [MIT License](LICENSE). Built for public good.
