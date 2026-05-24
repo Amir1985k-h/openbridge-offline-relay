@@ -70,7 +70,7 @@ We are actively building based on our Strategic Roadmap for Offline Digital Surv
 
 ---
 
-👥️ How to Contribute & Give Feedback
+## 👥️ How to Contribute & Give Feedback
 
 We are in early stage and actively looking for:
 
