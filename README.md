@@ -91,7 +91,9 @@ Ways to help:
 
 ---
 
-## ⚠️ Important DisclaimerThis project is under heavy development. Use only for testing purposes. Do not send real funds until proper security audits are completed.
+## ⚠️ Important Disclaimer
+
+This project is under heavy development. Use only for testing purposes. Do not send real funds until proper security audits are completed.
 
 ---
 
