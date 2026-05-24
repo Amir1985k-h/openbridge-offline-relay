@@ -82,8 +82,11 @@ We are in early stage and actively looking for:
 Ways to help:
 
 1.Open an Issue with your feedback
+
 2.Start a discussion in GitHub Discussions (./discussions)
+
 3.Submit Pull Requests
+
 4.Star the repo if you find it valuable ⭐️
 
 ---
