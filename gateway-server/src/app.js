@@ -11,19 +11,24 @@ const { broadcastOfflineTransaction } = require('./web3-broadcaster');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// در حال حافظه (برای محیط production بعداً Redis استفاده کن)
-const messageBuffer = new Map(); // key: TXID → array of parts
+// In-memory buffer (بعداً Redis می‌شود)
+const messageBuffer = new Map(); // txId → { parts: [], timestamp: Date, from: string }
 
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+    origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
+    methods: ['POST', 'GET']
+}));
 app.use(bodyParser.json({ limit: '10kb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10kb' }));
 
-// Rate Limiting
+// Stronger Rate Limiting
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
-    message: { success: false, error: "Too many requests" }
+    windowMs: 15 * 60 * 1000, // 15 دقیقه
+    max: 50,                  // فقط ۵۰ درخواست در ۱۵ دقیقه
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, error: "Too many requests. Please slow down." }
 });
 app.use('/api/', limiter);
 
@@ -35,25 +40,26 @@ app.get('/health', (req, res) => {
 // ====================== MAIN SMS RELAY ENDPOINT ======================
 app.post('/api/sms-relay', async (req, res) => {
     try {
-        const { from, message } = req.body;
+        const { from, message, secret } = req.body;
 
-        if (!message || typeof message !== 'string') {
+        // Basic Secret Protection (بعداً قوی‌تر می‌کنیم)
+        if (secret !== process.env.SMS_RELAY_SECRET) {
+            return res.status(401).json({ success: false, error: "Unauthorized" });
+        }
+
+        if (!message || typeof message !== 'string' || message.length < 10) {
             return res.status(400).json({ success: false, error: "Invalid message payload" });
         }
 
-        console.log(`📨 SMS received from ${from} | Length: ${message.length}`);
+        console.log(`📨 SMS received from ${from || 'unknown'} | Length: ${message.length}`);
 
-        // تشخیص پیام تک‌قسمتی یا چندقسمتی
+        // Single part (برای تست)
         if (!message.startsWith('OB:')) {
-            // پیام تک‌قسمتی (برای تست)
             const result = await broadcastOfflineTransaction(message.trim());
-            return res.json(result.success ? 
-                { success: true, txHash: result.hash, message: "Single part transaction broadcasted" } :
-                { success: false, error: result.error }
-            );
+            return res.json(result);
         }
 
-        // پردازش Multi-part
+        // Multi-part processing
         const parts = message.split(':');
         if (parts.length < 5) {
             return res.status(400).json({ success: false, error: "Invalid OB payload format" });
@@ -63,65 +69,64 @@ app.post('/api/sms-relay', async (req, res) => {
         const total = parseInt(totalParts);
         const index = parseInt(currentIndex);
 
-        if (!txId || isNaN(total) || isNaN(index) || !dataHex) {
+        if (!txId || isNaN(total) || isNaN(index) || !dataHex || dataHex.length < 10) {
             return res.status(400).json({ success: false, error: "Invalid payload data" });
         }
 
-        // ذخیره در بافر
+        // Store in buffer
         if (!messageBuffer.has(txId)) {
-            messageBuffer.set(txId, new Array(total).fill(null));
+            messageBuffer.set(txId, { 
+                parts: new Array(total).fill(null),
+                timestamp: Date.now(),
+                from: from 
+            });
         }
 
         const buffer = messageBuffer.get(txId);
-        buffer[index - 1] = dataHex;   // index از 1 شروع میشه
+        buffer.parts[index - 1] = dataHex;
 
-        // چک کنیم همه قسمت‌ها اومده؟
-        const completed = buffer.every(part => part !== null);
+        const completed = buffer.parts.every(part => part !== null);
 
         if (completed) {
-            const fullPayload = buffer.join('');
-            console.log(`✅ Complete transaction received! TXID: ${txId} | Total parts: ${total}`);
+            const fullPayload = buffer.parts.join('');
+            console.log(`✅ Complete transaction received! TXID: ${txId}`);
 
             const result = await broadcastOfflineTransaction('0x' + fullPayload);
 
-            // پاک کردن از حافظه
             messageBuffer.delete(txId);
 
             return res.json({
                 success: result.success,
                 txHash: result.hash || null,
-                message: result.success ? "Transaction successfully broadcasted" : result.error,
+                message: result.success ? "Transaction broadcasted successfully" : result.error,
                 txId: txId
             });
         } else {
-            const received = buffer.filter(p => p !== null).length;
+            const received = buffer.parts.filter(p => p !== null).length;
             return res.json({
                 success: true,
-                message: `Part ${index}/${total} received. Waiting for remaining parts...`,
-                received: received,
-                total: total,
+                message: `Part ${index}/${total} received (${received}/${total})`,
                 txId: txId
             });
         }
 
     } catch (error) {
-        console.error("Critical error:", error);
+        console.error("Critical error in sms-relay:", error);
         return res.status(500).json({ success: false, error: "Internal server error" });
     }
 });
 
-// Cleanup old incomplete messages (هر ۳۰ دقیقه)
+// Auto cleanup old buffers
 setInterval(() => {
     const now = Date.now();
-    for (const [txId, buffer] of messageBuffer.entries()) {
-        // اگر بیشتر از ۳۰ دقیقه گذشته باشه پاک کن
-        if (now - (buffer.timestamp || 0) > 30 * 60 * 1000) {
+    for (const [txId, data] of messageBuffer.entries()) {
+        if (now - data.timestamp > 30 * 60 * 1000) { // 30 minutes
+            console.log(`🧹 Cleaned up incomplete TX: ${txId}`);
             messageBuffer.delete(txId);
         }
     }
-}, 30 * 60 * 1000);
+}, 10 * 60 * 1000);
 
 app.listen(PORT, () => {
     console.log(`🚀 OpenBridge Relay Server running on port ${PORT}`);
-    console.log(`📡 SMS Relay: http://localhost:${PORT}/api/sms-relay`);
 });
