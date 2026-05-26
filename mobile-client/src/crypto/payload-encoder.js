@@ -1,39 +1,34 @@
 // mobile-client/src/crypto/payload-encoder.js
-const { ethers } = require("ethers");
-const crypto = require("crypto");
+const { splitTransactionForSMS, assembleSMSPayload } = require('./sms/payload-splitter');
 
 /**
- * تبدیل تراکنش امضا شده به payload مناسب برای SMS
- * @param {string} signedRawTx - تراکنش امضا شده (0x...)
- * @returns {Object} payload آماده برای ارسال
+ * آماده‌سازی کامل تراکنش برای ارسال از طریق SMS
  */
 function encodeTransactionForSMS(signedRawTx) {
     try {
-        // حذف 0x
-        let hexData = signedRawTx.startsWith('0x') ? signedRawTx.slice(2) : signedRawTx;
-
-        // برای SMS، payload رو به قطعات کوچک تقسیم می‌کنیم (حداکثر ۱۴۰-۱۵۰ کاراکتر)
-        const chunkSize = 120; // امن برای اکثر SMS
-        const chunks = [];
-
-        for (let i = 0; i < hexData.length; i += chunkSize) {
-            chunks.push(hexData.slice(i, i + chunkSize));
+        if (!signedRawTx || !signedRawTx.startsWith('0x')) {
+            throw new Error("Invalid signed transaction");
         }
 
-        const txId = "OB" + Date.now().toString(36).toUpperCase(); // شناسه منحصر به فرد
+        const smsMessages = splitTransactionForSMS(signedRawTx, 120);
+
+        const txId = smsMessages[0].split(':')[1]; // گرفتن TxID از اولین پیام
+
+        console.log(`✅ Payload encoded successfully!`);
+        console.log(`TxID: ${txId}`);
+        console.log(`Total SMS parts: ${smsMessages.length}`);
 
         return {
             success: true,
             txId: txId,
-            totalParts: chunks.length,
-            chunks: chunks,
-            fullHex: hexData,
-            estimatedSMSCount: chunks.length,
-            message: `Transaction prepared for SMS (${chunks.length} parts)`
+            totalParts: smsMessages.length,
+            messages: smsMessages,           // آرایه پیام‌های آماده ارسال
+            rawTx: signedRawTx,
+            message: `تراکنش به ${smsMessages.length} پیامک تقسیم شد`
         };
 
     } catch (error) {
-        console.error("Encoding failed:", error);
+        console.error("Encoding failed:", error.message);
         return {
             success: false,
             error: error.message
@@ -42,13 +37,13 @@ function encodeTransactionForSMS(signedRawTx) {
 }
 
 /**
- * ترکیب دوباره قطعات دریافت شده در سرور (برای تست)
+ * بازسازی تراکنش کامل از پیامک‌های دریافتی (برای تست سرور)
  */
-function decodeMultiPartPayload(chunks) {
-    return chunks.join('');
+function decodeSMSPayload(receivedSMSList) {
+    return assembleSMSPayload(receivedSMSList);
 }
 
 module.exports = { 
     encodeTransactionForSMS,
-    decodeMultiPartPayload 
+    decodeSMSPayload 
 };
