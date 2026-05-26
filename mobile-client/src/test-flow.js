@@ -1,44 +1,61 @@
 // mobile-client/src/test-flow.js
 const SecurityWarningScreen = require('./components/SecurityWarning');
-const HomeScreen = require('./screens/HomeScreen');
+const { signTransactionOffline } = require('./crypto/offline-signer');
 const { encodeTransactionForSMS } = require('./crypto/payload-encoder');
 
 /**
- * تست کامل: امضا → Encode → آماده‌سازی SMS
+ * تست کامل بدون نیاز به سرور (همه چیز محلی)
  */
-async function runFullTest(privateKey, toAddress, amount) {
-    console.log("\n🚀 === OpenBridge Full Flow Test ===\n");
+async function runOfflineTest() {
+    console.log("\n🚀 === OpenBridge Offline Full Test (بدون سرور) ===\n");
 
     SecurityWarningScreen().showSecurityWarning();
 
-    console.log("📤 مرحله ۱: امضای تراکنش آفلاین...");
-    
-    const signResult = await require('./screens/SignTransactionScreen').handleSignAndPrepare(
-        privateKey, toAddress, amount
-    );
+    // ================== اطلاعات تست ==================
+    const privateKey = "0xYOUR_TEST_PRIVATE_KEY_HERE";   // ←←← اینجا عوض کن (کلید تست)
+    const toAddress   = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"; 
+    const amount      = "0.001";
 
-    if (!signResult || !signResult.success) {
-        console.error("❌ Signing failed:", signResult?.error);
-        return;
-    }
+    console.log("📍 آدرس مقصد:", toAddress);
+    console.log("💰 مقدار:", amount, "ETH\n");
 
-    console.log("✅ امضا با موفقیت انجام شد");
-    console.log("📨 مرحله ۲: تبدیل به payload SMS...");
-
-    const payloadResult = encodeTransactionForSMS(signResult.signedResult.signedRawTx);
-
-    if (payloadResult.success) {
-        console.log("\n🎉 تست کامل با موفقیت انجام شد!");
-        console.log(`🔑 TxID: ${payloadResult.txId}`);
-        console.log(`📱 تعداد پیامک: ${payloadResult.totalParts}`);
-        console.log("\n💡 حالا پیامک‌های زیر را یکی یکی به شماره Gateway ارسال کن:");
-        
-        payloadResult.messages.forEach((msg, i) => {
-            console.log(`[${i+1}/${payloadResult.totalParts}] ${msg}`);
+    try {
+        // مرحله ۱: امضا
+        console.log("🔐 در حال امضای تراکنش...");
+        const signResult = await signTransactionOffline(privateKey, {
+            to: toAddress,
+            amountInEther: amount,
+            chainId: 1,
+            gasLimit: 21000
         });
-    } else {
-        console.error("❌ Payload encoding failed");
+
+        if (!signResult.success) throw new Error(signResult.error);
+
+        console.log("✅ امضا موفق — From:", signResult.from);
+
+        // مرحله ۲: آماده‌سازی برای SMS
+        console.log("📨 در حال تبدیل به پیامک...");
+        const payloadResult = encodeTransactionForSMS(signResult.signedRawTx);
+
+        if (!payloadResult.success) throw new Error(payloadResult.error);
+
+        // نمایش نتیجه نهایی
+        console.log("\n🎉 === تست با موفقیت تمام شد! ===\n");
+        console.log(`🆔 TxID: ${payloadResult.txId}`);
+        console.log(`📱 تعداد پیامک: ${payloadResult.totalParts}`);
+        console.log("\n📋 پیامک‌های آماده ارسال:\n");
+
+        payloadResult.messages.forEach((msg, index) => {
+            console.log(`[${index + 1}/${payloadResult.totalParts}] ${msg}`);
+        });
+
+        console.log("\n💡 این پیامک‌ها را می‌توانی بعداً به سرور gateway ارسال کنی.");
+
+    } catch (error) {
+        console.error("❌ خطا در تست:", error.message);
     }
 }
 
-module.exports = { runFullTest };
+module.exports = { runOfflineTest };
+// در پایین فایل اضافه کن
+runOfflineTest();
