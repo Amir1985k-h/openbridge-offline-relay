@@ -1,40 +1,44 @@
 // mobile-client/src/test-flow.js
 const SecurityWarningScreen = require('./components/SecurityWarning');
 const HomeScreen = require('./screens/HomeScreen');
+const { encodeTransactionForSMS } = require('./crypto/payload-encoder');
 
 /**
- * تست کامل جریان: امضا → Encode → آماده برای SMS
+ * تست کامل: امضا → Encode → آماده‌سازی SMS
  */
-async function runFullTest() {
-    console.log("🧪 شروع تست کامل OpenBridge Mobile...\n");
+async function runFullTest(privateKey, toAddress, amount) {
+    console.log("\n🚀 === OpenBridge Full Flow Test ===\n");
 
-    // نمایش هشدار امنیتی
     SecurityWarningScreen().showSecurityWarning();
 
-    console.log("🔑 لطفاً برای تست از یک والت تست (Testnet یا مقدار خیلی کم) استفاده کنید!\n");
+    console.log("📤 مرحله ۱: امضای تراکنش آفلاین...");
+    
+    const signResult = await require('./screens/SignTransactionScreen').handleSignAndPrepare(
+        privateKey, toAddress, amount
+    );
 
-    // === اطلاعات تست (بعداً از کاربر می‌گیریم) ===
-    const privateKey = "0xYOUR_TEST_PRIVATE_KEY_HERE"; // ⚠️ عوض کن
-    const toAddress = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"; // آدرس تست
-    const amount = "0.001";
+    if (!signResult || !signResult.success) {
+        console.error("❌ Signing failed:", signResult?.error);
+        return;
+    }
 
-    console.log("📤 در حال امضای تراکنش...");
+    console.log("✅ امضا با موفقیت انجام شد");
+    console.log("📨 مرحله ۲: تبدیل به payload SMS...");
 
-    const result = await HomeScreen().runTestExample 
-        ? await HomeScreen().runTestExample() 
-        : "runTestExample not connected yet";
+    const payloadResult = encodeTransactionForSMS(signResult.signedResult.signedRawTx);
 
-    if (result && result.success) {
-        console.log("\n🎉 تست با موفقیت انجام شد!");
-        console.log("TxID:", result.payloadResult.txId);
-        console.log("تعداد پیام‌های SMS:", result.payloadResult.totalParts);
-        console.log("\nحالا می‌تونی payloadها رو کپی کنی و از طریق SMS به سرور gateway بفرستی.");
+    if (payloadResult.success) {
+        console.log("\n🎉 تست کامل با موفقیت انجام شد!");
+        console.log(`🔑 TxID: ${payloadResult.txId}`);
+        console.log(`📱 تعداد پیامک: ${payloadResult.totalParts}`);
+        console.log("\n💡 حالا پیامک‌های زیر را یکی یکی به شماره Gateway ارسال کن:");
+        
+        payloadResult.messages.forEach((msg, i) => {
+            console.log(`[${i+1}/${payloadResult.totalParts}] ${msg}`);
+        });
     } else {
-        console.log("❌ تست ناموفق:", result ? result.error : "Unknown error");
+        console.error("❌ Payload encoding failed");
     }
 }
-
-// برای اجرای تست:
-// runFullTest();
 
 module.exports = { runFullTest };
