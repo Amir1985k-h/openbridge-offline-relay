@@ -3,25 +3,20 @@ const SecurityWarningScreen = require('./components/SecurityWarning');
 const { signTransactionOffline } = require('./crypto/offline-signer');
 const { encodeTransactionForSMS } = require('./crypto/payload-encoder');
 
-/**
- * تست کامل بدون نیاز به سرور (همه چیز محلی)
- */
 async function runOfflineTest() {
-    console.log("\n🚀 === OpenBridge Offline Full Test (بدون سرور) ===\n");
+    console.log("\n🚀 === OpenBridge Offline Full Test ===\n");
 
     SecurityWarningScreen().showSecurityWarning();
 
-    // ================== اطلاعات تست ==================
-    const privateKey = "0xYOUR_TEST_PRIVATE_KEY_HERE";   // ←←← اینجا عوض کن (کلید تست)
+    // ================== والت تست (تغییر بده) ==================
+    const privateKey = "0x" + "b1319cbc81f2c10ed272a6cefe5a823a22a7b9d0b24519be4deb60f9844e2daf"; 
     const toAddress   = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"; 
-    const amount      = "0.001";
+    const amount      = "0.0001";     // مقدار خیلی کم برای تست
 
-    console.log("📍 آدرس مقصد:", toAddress);
+    console.log("📍 تست ارسال به آدرس:", toAddress);
     console.log("💰 مقدار:", amount, "ETH\n");
 
     try {
-        // مرحله ۱: امضا
-        console.log("🔐 در حال امضای تراکنش...");
         const signResult = await signTransactionOffline(privateKey, {
             to: toAddress,
             amountInEther: amount,
@@ -33,29 +28,22 @@ async function runOfflineTest() {
 
         console.log("✅ امضا موفق — From:", signResult.from);
 
-        // مرحله ۲: آماده‌سازی برای SMS
-        console.log("📨 در حال تبدیل به پیامک...");
         const payloadResult = encodeTransactionForSMS(signResult.signedRawTx);
 
-        if (!payloadResult.success) throw new Error(payloadResult.error);
+        if (payloadResult.success) {
+            console.log("\n🎉 تست کامل با موفقیت انجام شد!\n");
+            console.log(`🆔 TxID: ${payloadResult.txId}`);
+            console.log(`📱 تعداد پیامک: ${payloadResult.totalParts}\n`);
 
-        // نمایش نتیجه نهایی
-        console.log("\n🎉 === تست با موفقیت تمام شد! ===\n");
-        console.log(`🆔 TxID: ${payloadResult.txId}`);
-        console.log(`📱 تعداد پیامک: ${payloadResult.totalParts}`);
-        console.log("\n📋 پیامک‌های آماده ارسال:\n");
-
-        payloadResult.messages.forEach((msg, index) => {
-            console.log(`[${index + 1}/${payloadResult.totalParts}] ${msg}`);
-        });
-
-        console.log("\n💡 این پیامک‌ها را می‌توانی بعداً به سرور gateway ارسال کنی.");
+            payloadResult.messages.forEach((msg, i) => {
+                console.log(`[${i+1}/${payloadResult.totalParts}] ${msg}`);
+            });
+        }
 
     } catch (error) {
-        console.error("❌ خطا در تست:", error.message);
+        console.error("❌ خطا:", error.message);
     }
 }
 
-module.exports = { runOfflineTest };
-// در پایین فایل اضافه کن
+// اجرای تست
 runOfflineTest();
