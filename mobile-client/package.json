@@ -1,18 +1,43 @@
 {
   "name": "openbridge-mobile-client",
-  "version": "1.0.0",
-  "description": "Offline transaction signer and mesh network client for OpenBridge",
-  "main": "src/crypto/offline-signer.js",
+  "version": "0.1.0",
+  "description": "Offline Ethereum & Polygon transaction signer for OpenBridge - Censorship Resistant",
+  "private": true,
+  "main": "src/App.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "echo \"Build not implemented yet\"",
-    "dev": "echo \"Mobile dev environment not set up yet\""
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "test": "echo \"No tests yet\"",
+    "lint": "eslint src/**/*.{js,jsx}"
   },
   "dependencies": {
-    "ethers": "^6.13.0"
+    "ethers": "^6.13.0",
+    "expo": "~51.0.0",
+    "expo-status-bar": "~1.12.1",
+    "react": "18.2.0",
+    "react-native": "0.74.5",
+    "react-native-get-random-values": "^1.11.0",
+    "@react-native-async-storage/async-storage": "1.24.5",
+    "expo-clipboard": "~6.0.0",
+    "expo-secure-store": "~13.0.0",
+    "expo-haptics": "~13.0.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@babel/core": "^7.20.0",
+    "eslint": "^8.57.0",
+    "eslint-config-expo": "~7.1.2"
+  },
   "author": "Amir1985k-h / OpenBridge Team",
   "license": "MIT",
-  "keywords": ["openbridge", "offline-signer", "ethereum", "sms-relay", "mesh-network"]
+  "keywords": [
+    "openbridge",
+    "offline-signer",
+    "ethereum",
+    "polygon",
+    "sms-relay",
+    "censorship-resistant",
+    "web3"
+  ]
 }
