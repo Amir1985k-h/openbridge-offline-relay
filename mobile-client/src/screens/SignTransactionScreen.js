@@ -1,13 +1,12 @@
 // src/screens/SignTransactionScreen.js
-import { signTransactionOffline } from '../crypto/offline-signer.js';
-import { encodeTransactionForSMS } from '../crypto/payload-encoder.js';
+const { signTransactionOffline } = require('../crypto/offline-signer');
+const { encodeTransactionForSMS } = require('../crypto/payload-encoder');
 
 async function startSigningFlow() {
     console.log("\n══════════════════════════════════════════════");
     console.log("   🚀 OpenBridge Offline Relay - امضای آفلاین");
     console.log("══════════════════════════════════════════════\n");
 
-    // داده‌های تست
     const testData = {
         privateKey: "0xb1319cbc81f2c10ed272a6cefe5a823a22a7b9d0b24519be4deb60f9844e2daf",
         to: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
@@ -52,4 +51,4 @@ async function startSigningFlow() {
     console.log("💡 هر پیامک را جداگانه به شماره Gateway ارسال کنید.");
 }
 
-export { startSigningFlow };
+module.exports = { startSigningFlow };
