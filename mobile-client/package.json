@@ -1,10 +1,12 @@
 {
   "name": "openbridge-mobile-client",
   "version": "0.1.0",
+  "type": "commonjs",
   "scripts": {
-    "test": "node src/test-flow.js"
+    "test": "node src/test-flow.js",
+    "start": "node App.js"
   },
   "dependencies": {
-    "ethers": "^6.13.0"
+    "ethers": "^6.16.0"
   }
 }
