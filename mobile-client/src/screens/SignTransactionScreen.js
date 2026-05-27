@@ -30,14 +30,17 @@ async function startSigningUI() {
                     const payload = encodeTransactionForSMS(signResult.signedRawTx);
                     
                     console.log("\n✅ امضا با موفقیت انجام شد!");
-                    console.log(`از آدرس: ${signResult.from}`);
+                    console.log(`از: ${signResult.from}`);
                     console.log(`تعداد پیامک: ${payload.totalParts}\n`);
 
+                    console.log("📋 پیامک‌های آماده ارسال:\n");
+                    
                     payload.messages.forEach((msg, i) => {
                         console.log(`[${i+1}/${payload.totalParts}] ${msg}`);
+                        console.log("   ↑ کپی کن ↑\n");
                     });
 
-                    console.log("\n💡 پیامک‌ها آماده ارسال به gateway هستند.");
+                    console.log("💡 هر پیامک را جداگانه از طریق SMS به شماره Gateway بفرست.");
                 } else {
                     console.log("❌ خطا:", signResult.error);
                 }
