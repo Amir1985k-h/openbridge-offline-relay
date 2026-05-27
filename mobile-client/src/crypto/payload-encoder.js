@@ -1,18 +1,27 @@
-// mobile-client/src/crypto/payload-encoder.js
-const { splitTransactionForSMS, assembleSMSPayload } = require('./sms/payload-splitter');
+// src/crypto/payload-encoder.js
+import { splitTransactionForSMS, assembleSMSPayload } from '../sms/payload-splitter.js';
 
 /**
- * آماده‌سازی کامل تراکنش برای ارسال از طریق SMS
+ * آماده‌سازی کامل تراکنش امضا شده برای ارسال از طریق SMS
+ * @param {string} signedRawTx - تراکنش امضا شده (با 0x)
  */
 function encodeTransactionForSMS(signedRawTx) {
     try {
-        if (!signedRawTx || !signedRawTx.startsWith('0x')) {
-            throw new Error("Invalid signed transaction");
+        if (!signedRawTx || typeof signedRawTx !== 'string' || !signedRawTx.startsWith('0x')) {
+            throw new Error("تراکنش امضا شده نامعتبر است");
         }
 
+        // تقسیم تراکنش به پیامک‌ها
         const smsMessages = splitTransactionForSMS(signedRawTx, 120);
 
-        const txId = smsMessages[0].split(':')[1]; // گرفتن TxID از اولین پیام
+        if (smsMessages.length === 0) {
+            throw new Error("شکست در تقسیم تراکنش به پیامک");
+        }
+
+        // استخراج TxID به صورت امن‌تر
+        const firstMessage = smsMessages[0];
+        const txIdMatch = firstMessage.match(/OB:(\d+)/);
+        const txId = txIdMatch ? txIdMatch[1] : 'UNKNOWN';
 
         console.log(`✅ Payload encoded successfully!`);
         console.log(`TxID: ${txId}`);
@@ -22,28 +31,34 @@ function encodeTransactionForSMS(signedRawTx) {
             success: true,
             txId: txId,
             totalParts: smsMessages.length,
-            messages: smsMessages,           // آرایه پیام‌های آماده ارسال
+            messages: smsMessages,           // آرایه پیام‌های آماده برای ارسال
             rawTx: signedRawTx,
             message: `تراکنش به ${smsMessages.length} پیامک تقسیم شد`
         };
 
     } catch (error) {
-        console.error("Encoding failed:", error.message);
+        console.error("❌ Payload encoding failed:", error.message);
         return {
             success: false,
-            error: error.message
+            error: error.message,
+            code: "ENCODING_ERROR"
         };
     }
 }
 
 /**
- * بازسازی تراکنش کامل از پیامک‌های دریافتی (برای تست سرور)
+ * بازسازی تراکنش از پیامک‌های دریافتی (برای Gateway Server)
  */
 function decodeSMSPayload(receivedSMSList) {
-    return assembleSMSPayload(receivedSMSList);
+    try {
+        return assembleSMSPayload(receivedSMSList);
+    } catch (error) {
+        console.error("❌ Payload assembly failed:", error.message);
+        throw error;
+    }
 }
 
-module.exports = { 
+export { 
     encodeTransactionForSMS,
     decodeSMSPayload 
 };
