@@ -1,19 +1,15 @@
 // App.js
 import { startSigningFlow } from './src/screens/SignTransactionScreen.js';
 
-export default function App() {
-    console.log("🚀 OpenBridge Mobile Client Started");
-    console.log("====================================\n");
+console.log("🚀 OpenBridge Mobile Client Started");
+console.log("====================================\n");
 
-    // اجرای تست اولیه (بعداً UI گرافیکی واقعی اضافه می‌کنیم)
-    startSigningFlow().catch(console.error);
-
-    return {
-        message: "✅ OpenBridge Offline Signer is ready for React Native UI!"
-    };
+async function main() {
+    try {
+        await startSigningFlow();
+    } catch (error) {
+        console.error("❌ خطا:", error.message);
+    }
 }
 
-// برای تست مستقیم در Node.js
-if (require.main === module) {
-    App();
-}
+main();
