@@ -1,42 +1,79 @@
-/**
- * تکه‌تکه کردن یک تراکنش خام طولانی به قطعات کوچک استاندارد جهت ارسال امن با SMS
- * @param {string} rawTx - تراکنش امضا شده هگز (شروع با 0x)
- * @param {number} maxChunkSize - حداکثر تعداد کاراکتر در هر پیامک (پیش‌فرض 120)
- * @returns {Array<string>} - آرایه‌ای از پیامک‌های شماره‌گذاری شده آماده ارسال
- */
-function splitTransactionForSMS(rawTx, maxChunkSize = 120) {
-    const cleanTx = rawTx.startsWith("0x") ? rawTx.slice(2) : rawTx;
-    const chunks = [];
-    const totalLength = cleanTx.length;
-    
-    for (let i = 0; i < totalLength; i += maxChunkSize) {
-        chunks.push(cleanTx.slice(i, i + maxChunkSize));
-    }
-    
-    const totalChunks = chunks.length;
-    const uniqueTxId = Math.random().toString(36).substring(2, 7).toUpperCase(); 
+// src/sms/payload-splitter.js
 
-    // فرمت خروجی پیامک: OB:[شناسه تصادفی]:[تعداد کل قطعات]:[شماره قطعه فعلی]:[داده متنی]
-    return chunks.map((chunk, index) => {
-        const chunkIndex = index + 1;
-        return `OB:${uniqueTxId}:${totalChunks}:${chunkIndex}:${chunk}`;
-    });
+/**
+ * تقسیم تراکنش خام به قطعات مناسب برای SMS
+ * @param {string} rawTx - تراکنش امضا شده (با 0x)
+ * @param {number} maxChunkSize - حداکثر کاراکتر در هر پیام (پیش‌فرض 110 برای حاشیه امن)
+ */
+function splitTransactionForSMS(rawTx, maxChunkSize = 110) {
+    try {
+        const cleanTx = rawTx.startsWith("0x") ? rawTx.slice(2) : rawTx;
+        if (!cleanTx || cleanTx.length === 0) {
+            throw new Error("تراکنش خالی است");
+        }
+
+        const chunks = [];
+        const totalLength = cleanTx.length;
+
+        for (let i = 0; i < totalLength; i += maxChunkSize) {
+            chunks.push(cleanTx.slice(i, i + maxChunkSize));
+        }
+
+        const totalChunks = chunks.length;
+        
+        // تولید TxID امن‌تر (ترکیب timestamp + random)
+        const timestamp = Date.now().toString(36).slice(-4);
+        const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const uniqueTxId = `${timestamp}${randomPart}`;
+
+        // فرمت: OB:TxID:TotalParts:CurrentPart:Data
+        return chunks.map((chunk, index) => {
+            const chunkIndex = index + 1;
+            return `OB:${uniqueTxId}:${totalChunks}:${chunkIndex}:${chunk}`;
+        });
+
+    } catch (error) {
+        console.error("❌ Split failed:", error.message);
+        throw error;
+    }
 }
 
 /**
- * بازسازی قطعات دریافتی پیامک در سمت سرور و چسباندن مجدد آن‌ها به هم
- * @param {Array<string>} receivedSMSList - لیست پیامک‌های دریافتی مربوط به یک تراکنش
- * @returns {string} - تراکنش کامل هگز آماده ارسال به شبکه (شروع با 0x)
+ * بازسازی تراکنش از پیامک‌های دریافتی
  */
 function assembleSMSPayload(receivedSMSList) {
+    if (!Array.isArray(receivedSMSList) || receivedSMSList.length === 0) {
+        throw new Error("لیست پیامک خالی است");
+    }
+
+    // مرتب‌سازی بر اساس شماره قطعه + چک کردن TxID یکسان
+    const firstMsg = receivedSMSList[0].split(':');
+    const expectedTxId = firstMsg[1];
+    const expectedTotal = parseInt(firstMsg[2]);
+
     const sortedChunks = receivedSMSList.sort((a, b) => {
-        const indexA = parseInt(a.split(":")[3]);
-        const indexB = parseInt(b.split(":")[3]);
-        return indexA - indexB;
+        const idxA = parseInt(a.split(":")[3]);
+        const idxB = parseInt(b.split(":")[3]);
+        return idxA - idxB;
     });
 
-    const rawHexPayload = sortedChunks.map(sms => sms.split(":")[4]).join("");
+    // اعتبارسنجی
+    if (sortedChunks.length !== expectedTotal) {
+        throw new Error(`تعداد قطعات ناقص است. انتظار ${expectedTotal} قطعه، دریافت ${sortedChunks.length} قطعه`);
+    }
+
+    const rawHexPayload = sortedChunks.map(sms => {
+        const parts = sms.split(":");
+        if (parts[1] !== expectedTxId) {
+            throw new Error("تراکنش‌های مختلف با هم قاطی شده‌اند");
+        }
+        return parts[4];
+    }).join("");
+
     return `0x${rawHexPayload}`;
 }
 
-module.exports = { splitTransactionForSMS, assembleSMSPayload };
+module.exports = { 
+    splitTransactionForSMS, 
+    assembleSMSPayload 
+};
