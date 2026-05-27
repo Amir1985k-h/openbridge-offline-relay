@@ -1,43 +1,10 @@
 {
   "name": "openbridge-mobile-client",
   "version": "0.1.0",
-  "description": "Offline Ethereum & Polygon transaction signer for OpenBridge - Censorship Resistant",
-  "private": true,
-  "main": "src/App.js",
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web",
-    "test": "echo \"No tests yet\"",
-    "lint": "eslint src/**/*.{js,jsx}"
+    "test": "node src/test-flow.js"
   },
   "dependencies": {
-    "ethers": "^6.13.0",
-    "expo": "~51.0.0",
-    "expo-status-bar": "~1.12.1",
-    "react": "18.2.0",
-    "react-native": "0.74.5",
-    "react-native-get-random-values": "^1.11.0",
-    "@react-native-async-storage/async-storage": "1.24.5",
-    "expo-clipboard": "~6.0.0",
-    "expo-secure-store": "~13.0.0",
-    "expo-haptics": "~13.0.0"
-  },
-  "devDependencies": {
-    "@babel/core": "^7.20.0",
-    "eslint": "^8.57.0",
-    "eslint-config-expo": "~7.1.2"
-  },
-  "author": "Amir1985k-h / OpenBridge Team",
-  "license": "MIT",
-  "keywords": [
-    "openbridge",
-    "offline-signer",
-    "ethereum",
-    "polygon",
-    "sms-relay",
-    "censorship-resistant",
-    "web3"
-  ]
+    "ethers": "^6.13.0"
+  }
 }
