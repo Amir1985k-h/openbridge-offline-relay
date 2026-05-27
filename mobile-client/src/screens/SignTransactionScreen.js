@@ -1,32 +1,47 @@
 // mobile-client/src/screens/SignTransactionScreen.js
 const { signTransactionOffline } = require('../crypto/offline-signer');
 const { encodeTransactionForSMS } = require('../crypto/payload-encoder');
+const readline = require('readline');
 
-async function signTransaction(privateKey, toAddress, amount) {
-    console.log("\n🔐 شروع امضای تراکنش...");
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
 
-    const result = await signTransactionOffline(privateKey, {
-        to: toAddress,
-        amountInEther: amount,
-        chainId: 1,        // Ethereum
-        gasLimit: 21000
+async function startSigningUI() {
+    console.log("\n🔐 OpenBridge - صفحه امضای تراکنش\n");
+
+    rl.question('کلید خصوصی (0x...): ', async (privateKey) => {
+        rl.question('آدرس مقصد (0x...): ', async (toAddress) => {
+            rl.question('مقدار (مثلاً 0.001): ', async (amount) => {
+
+                console.log("\n⏳ در حال امضا...");
+
+                const result = await signTransactionOffline(privateKey.trim(), {
+                    to: toAddress.trim(),
+                    amountInEther: amount.trim(),
+                    chainId: 1,
+                    gasLimit: 21000
+                });
+
+                if (result.success) {
+                    const payload = encodeTransactionForSMS(result.signedRawTx);
+                    
+                    console.log("\n✅ امضا موفق بود!");
+                    console.log(`📍 از آدرس: ${result.from}`);
+                    console.log(`📱 تعداد پیامک: ${payload.totalParts}\n`);
+
+                    payload.messages.forEach((msg, i) => {
+                        console.log(`[${i+1}/${payload.totalParts}] ${msg}`);
+                    });
+                } else {
+                    console.log("❌ خطا:", result.error);
+                }
+
+                rl.close();
+            });
+        });
     });
-
-    if (!result.success) {
-        console.error("❌ خطا در امضا:", result.error);
-        return result;
-    }
-
-    const payload = encodeTransactionForSMS(result.signedRawTx);
-
-    console.log("\n🎉 تراکنش آماده ارسال via SMS");
-    console.log(`TxID: ${payload.txId} | ${payload.totalParts} پیامک`);
-
-    payload.messages.forEach((msg, i) => {
-        console.log(`[${i+1}/${payload.totalParts}] ${msg}`);
-    });
-
-    return { success: true, result, payload };
 }
 
-module.exports = { signTransaction };
+module.exports = { startSigningUI };
