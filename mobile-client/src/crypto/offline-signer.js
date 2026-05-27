@@ -1,5 +1,5 @@
-// mobile-client/src/crypto/offline-signer.js
-const { ethers } = require("ethers");
+// src/crypto/offline-signer.js
+import { ethers } from "ethers";
 
 /**
  * امضای امن تراکنش به صورت کاملاً آفلاین
@@ -8,59 +8,54 @@ const { ethers } = require("ethers");
  */
 async function signTransactionOffline(privateKey, txParams) {
     try {
-        // ====================== اعتبارسنجی امنیتی ======================
-        if (!privateKey || typeof privateKey !== 'string') {
-            throw new Error("کلید خصوصی الزامی است");
+        // اعتبارسنجی ورودی
+        if (!privateKey?.startsWith('0x') || privateKey.length !== 66) {
+            throw new Error("کلید خصوصی نامعتبر است");
         }
 
-        if (!privateKey.startsWith('0x')) {
-            throw new Error("کلید خصوصی باید با 0x شروع شود");
-        }
-
-        if (privateKey.length !== 66) {
-            throw new Error("طول کلید خصوصی نامعتبر است (66 کاراکتر)");
-        }
-
-        // اعتبارسنجی آدرس مقصد
         if (!ethers.isAddress(txParams.to)) {
             throw new Error("آدرس مقصد نامعتبر است");
         }
 
-        if (!txParams.amountInEther || parseFloat(txParams.amountInEther) <= 0) {
+        const amount = parseFloat(txParams.amountInEther);
+        if (!amount || amount <= 0) {
             throw new Error("مقدار ارسالی باید بیشتر از صفر باشد");
         }
 
-        // ====================== امضای تراکنش ======================
         const wallet = new ethers.Wallet(privateKey);
+        console.log(`🔐 Signing transaction for address: ${wallet.address}`);
 
+        // ساخت تراکنش با پشتیبانی EIP-1559
         const tx = {
             to: txParams.to,
-            value: ethers.parseEther(txParams.amountInEther.toString()),
+            value: ethers.parseEther(amount.toString()),
             gasLimit: txParams.gasLimit || 21000,
-            gasPrice: txParams.gasPriceInGwei 
-                ? ethers.parseUnits(txParams.gasPriceInGwei.toString(), "gwei")
-                : undefined,
             chainId: txParams.chainId || 1,
             nonce: txParams.nonce,
-            data: txParams.data || "0x"
+            data: txParams.data || "0x",
+            // EIP-1559
+            maxFeePerGas: txParams.maxFeePerGas 
+                ? ethers.parseUnits(txParams.maxFeePerGas.toString(), "gwei")
+                : undefined,
+            maxPriorityFeePerGas: txParams.maxPriorityFeePerGas 
+                ? ethers.parseUnits(txParams.maxPriorityFeePerGas.toString(), "gwei")
+                : undefined,
         };
-
-        console.log(`🔐 Signing transaction for address: ${wallet.address}`);
 
         const signedTx = await wallet.signTransaction(tx);
 
-        // هش تراکنش برای نمایش
-        const txHash = ethers.keccak256(signedTx);
+        // محاسبه صحیح Tx Hash برای preview
+        const txHash = ethers.keccak256(ethers.getBytes(signedTx));
 
         console.log("✅ Transaction signed successfully (Offline)");
         console.log(`🔗 Preview Tx Hash: ${txHash.slice(0, 20)}...`);
 
         return {
             success: true,
-            signedRawTx: signedTx,           // مهم‌ترین فیلد برای ارسال به SMS
+            signedRawTx: signedTx,
             from: wallet.address,
             to: tx.to,
-            value: txParams.amountInEther,
+            value: amount,
             chainId: tx.chainId,
             txHashPreview: txHash,
             timestamp: Date.now()
@@ -76,4 +71,4 @@ async function signTransactionOffline(privateKey, txParams) {
     }
 }
 
-module.exports = { signTransactionOffline };
+export { signTransactionOffline };
