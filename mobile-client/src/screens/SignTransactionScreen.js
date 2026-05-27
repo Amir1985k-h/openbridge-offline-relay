@@ -7,19 +7,19 @@ async function startSigningFlow() {
     console.log("   🚀 OpenBridge Offline Relay - امضای آفلاین");
     console.log("══════════════════════════════════════════════\n");
 
-    // === داده‌های تست ===
+    // داده‌های تست
     const testData = {
         privateKey: "0xb1319cbc81f2c10ed272a6cefe5a823a22a7b9d0b24519be4deb60f9844e2daf",
-        to: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e", 
+        to: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
         amountInEther: "0.0001"
     };
 
-    console.log("⏳ در حال امضا و آماده‌سازی تراکنش...");
+    console.log("⏳ در حال امضا و آماده‌سازی...");
 
     const signResult = await signTransactionOffline(testData.privateKey, {
         to: testData.to,
         amountInEther: testData.amountInEther,
-        chainId: 1,           // Mainnet - برای تست بهتر Sepolia (11155111) استفاده کن
+        chainId: 1,
         gasLimit: 21000
     });
 
@@ -46,7 +46,7 @@ async function startSigningFlow() {
     
     payload.messages.forEach((msg, i) => {
         console.log(`[${i+1}/${payload.totalParts}] ${msg}`);
-        console.log("   ↑↑↑ کپی کن و از طریق SMS بفرست ↑↑↑\n");
+        console.log("   ↑↑↑ کپی کن ↑↑↑\n");
     });
 
     console.log("💡 هر پیامک را جداگانه به شماره Gateway ارسال کنید.");
