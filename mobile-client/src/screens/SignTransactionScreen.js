@@ -9,33 +9,37 @@ const rl = readline.createInterface({
 });
 
 async function startSigningUI() {
-    console.log("\n🔐 OpenBridge - صفحه امضای تراکنش\n");
+    console.log("\n════════════════════════════════════");
+    console.log("   OpenBridge - امضای آفلاین تراکنش");
+    console.log("════════════════════════════════════\n");
 
-    rl.question('کلید خصوصی (0x...): ', async (privateKey) => {
-        rl.question('آدرس مقصد (0x...): ', async (toAddress) => {
-            rl.question('مقدار (مثلاً 0.001): ', async (amount) => {
+    rl.question('🔑 کلید خصوصی (0x...): ', async (privateKey) => {
+        rl.question('📍 آدرس مقصد (0x...): ', async (toAddress) => {
+            rl.question('💰 مقدار (ETH): ', async (amount) => {
 
-                console.log("\n⏳ در حال امضا...");
+                console.log("\n⏳ در حال امضا و آماده‌سازی...");
 
-                const result = await signTransactionOffline(privateKey.trim(), {
+                const signResult = await signTransactionOffline(privateKey.trim(), {
                     to: toAddress.trim(),
                     amountInEther: amount.trim(),
                     chainId: 1,
                     gasLimit: 21000
                 });
 
-                if (result.success) {
-                    const payload = encodeTransactionForSMS(result.signedRawTx);
+                if (signResult.success) {
+                    const payload = encodeTransactionForSMS(signResult.signedRawTx);
                     
-                    console.log("\n✅ امضا موفق بود!");
-                    console.log(`📍 از آدرس: ${result.from}`);
-                    console.log(`📱 تعداد پیامک: ${payload.totalParts}\n`);
+                    console.log("\n✅ امضا با موفقیت انجام شد!");
+                    console.log(`از آدرس: ${signResult.from}`);
+                    console.log(`تعداد پیامک: ${payload.totalParts}\n`);
 
                     payload.messages.forEach((msg, i) => {
                         console.log(`[${i+1}/${payload.totalParts}] ${msg}`);
                     });
+
+                    console.log("\n💡 پیامک‌ها آماده ارسال به gateway هستند.");
                 } else {
-                    console.log("❌ خطا:", result.error);
+                    console.log("❌ خطا:", signResult.error);
                 }
 
                 rl.close();
