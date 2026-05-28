@@ -1,13 +1,10 @@
 {
   "name": "openbridge-mobile-client",
   "version": "0.1.0",
-  "type": "commonjs",
   "scripts": {
-    "start": "node App.js",
     "test": "node src/test-flow.js"
   },
   "dependencies": {
-    "@react-native-async-storage/async-storage": "^3.1.0",
-    "ethers": "^6.16.0"
+    "ethers": "^6.13.0"
   }
 }
