@@ -1,6 +1,10 @@
-// src/test-flow.js
-const { startSigningUI } = require('./screens/SignTransactionScreen');
+// mobile-client/src/test-flow.js
+import { startSigningFlow } from './screens/SignTransactionScreen.js';
 
-console.log("🚀 OpenBridge Mobile Signer Started\n");
+console.log("🚀 OpenBridge Mobile Signer - تست کامل\n");
 
-startSigningUI();
+async function runTest() {
+    await startSigningFlow();
+}
+
+runTest().catch(console.error);
