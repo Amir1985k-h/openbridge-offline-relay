@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "type": "commonjs",
   "scripts": {
-    "test": "node src/test-flow.js",
-    "start": "node App.js"
+    "start": "node App.js",
+    "test": "node src/test-flow.js"
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "^3.1.0",
     "ethers": "^6.16.0"
   }
 }
