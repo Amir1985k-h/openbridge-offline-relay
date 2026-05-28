@@ -1,12 +1,11 @@
 // src/sms/payload-splitter.js
 
-/**
- * تقسیم تراکنش به قطعات SMS
- */
 function splitTransactionForSMS(rawTx, maxChunkSize = 110) {
     try {
         const cleanTx = rawTx.startsWith("0x") ? rawTx.slice(2) : rawTx;
-        if (!cleanTx) throw new Error("تراکنش خالی است");
+        if (!cleanTx || cleanTx.length === 0) {
+            throw new Error("تراکنش خالی است");
+        }
 
         const chunks = [];
         for (let i = 0; i < cleanTx.length; i += maxChunkSize) {
