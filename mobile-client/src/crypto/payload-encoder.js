@@ -1,16 +1,18 @@
 // src/crypto/payload-encoder.js
-const { splitTransactionForSMS } = require('../sms/payload-splitter');
+const { splitTransactionForSMS, assembleSMSPayload } = require('../sms/payload-splitter');
 
+/**
+ * آماده‌سازی کامل تراکنش برای ارسال از طریق SMS
+ */
 function encodeTransactionForSMS(signedRawTx) {
     try {
         if (!signedRawTx || !signedRawTx.startsWith('0x')) {
-            throw new Error("تراکنش امضا شده نامعتبر است");
+            throw new Error("Invalid signed transaction");
         }
 
-        const smsMessages = splitTransactionForSMS(signedRawTx);
+        const smsMessages = splitTransactionForSMS(signedRawTx, 120);
 
-        const firstMessage = smsMessages[0];
-        const txId = firstMessage.split(':')[1];
+        const txId = smsMessages[0].split(':')[1]; // گرفتن TxID از اولین پیام
 
         console.log(`✅ Payload encoded successfully!`);
         console.log(`TxID: ${txId}`);
@@ -21,12 +23,19 @@ function encodeTransactionForSMS(signedRawTx) {
             txId: txId,
             totalParts: smsMessages.length,
             messages: smsMessages,
-            rawTx: signedRawTx
+            rawTx: signedRawTx,
+            message: `تراکنش به ${smsMessages.length} پیامک تقسیم شد`
         };
+
     } catch (error) {
-        console.error("❌ Encoding failed:", error.message);
-        return { success: false, error: error.message };
+        console.error("Encoding failed:", error.message);
+        return {
+            success: false,
+            error: error.message
+        };
     }
 }
 
-module.exports = { encodeTransactionForSMS };
+module.exports = { 
+    encodeTransactionForSMS
+};
