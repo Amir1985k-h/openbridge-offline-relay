@@ -1,54 +1,54 @@
 // src/screens/SignTransactionScreen.js
 const { signTransactionOffline } = require('../crypto/offline-signer');
 const { encodeTransactionForSMS } = require('../crypto/payload-encoder');
+const readline = require('readline');
 
-async function startSigningFlow() {
-    console.log("\n══════════════════════════════════════════════");
-    console.log("   🚀 OpenBridge Offline Relay - امضای آفلاین");
-    console.log("══════════════════════════════════════════════\n");
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
 
-    const testData = {
-        privateKey: "0xb1319cbc81f2c10ed272a6cefe5a823a22a7b9d0b24519be4deb60f9844e2daf",
-        to: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
-        amountInEther: "0.0001"
-    };
+async function startSigningUI() {
+    console.log("\n════════════════════════════════════");
+    console.log("   OpenBridge - امضای آفلاین تراکنش");
+    console.log("════════════════════════════════════\n");
 
-    console.log("⏳ در حال امضا و آماده‌سازی...");
+    rl.question('🔑 کلید خصوصی (0x...): ', async (privateKey) => {
+        rl.question('📍 آدرس مقصد (0x...): ', async (toAddress) => {
+            rl.question('💰 مقدار (ETH): ', async (amount) => {
 
-    const signResult = await signTransactionOffline(testData.privateKey, {
-        to: testData.to,
-        amountInEther: testData.amountInEther,
-        chainId: 1,
-        gasLimit: 21000
+                console.log("\n⏳ در حال امضا و آماده‌سازی...");
+
+                const signResult = await signTransactionOffline(privateKey.trim(), {
+                    to: toAddress.trim(),
+                    amountInEther: amount.trim(),
+                    chainId: 1,
+                    gasLimit: 21000
+                });
+
+                if (signResult.success) {
+                    const payload = encodeTransactionForSMS(signResult.signedRawTx);
+                    
+                    console.log("\n✅ امضا با موفقیت انجام شد!");
+                    console.log(`از: ${signResult.from}`);
+                    console.log(`تعداد پیامک: ${payload.totalParts}\n`);
+
+                    console.log("📋 پیامک‌های آماده ارسال:\n");
+                    
+                    payload.messages.forEach((msg, i) => {
+                        console.log(`[${i+1}/${payload.totalParts}] ${msg}`);
+                        console.log("   ↑ کپی کن ↑\n");
+                    });
+
+                    console.log("💡 هر پیامک را جداگانه از طریق SMS به شماره Gateway بفرست.");
+                } else {
+                    console.log("❌ خطا:", signResult.error);
+                }
+
+                rl.close();
+            });
+        });
     });
-
-    if (!signResult.success) {
-        console.error("❌ Signing failed:", signResult.error);
-        return;
-    }
-
-    const payload = encodeTransactionForSMS(signResult.signedRawTx);
-
-    if (!payload.success) {
-        console.error("❌ Encoding failed:", payload.error);
-        return;
-    }
-
-    console.log("\n✅ ✅ موفقیت کامل! ✅ ✅\n");
-    console.log(`از: ${signResult.from}`);
-    console.log(`به: ${signResult.to}`);
-    console.log(`مقدار: ${signResult.value} ETH`);
-    console.log(`TxID: ${payload.txId}`);
-    console.log(`تعداد پیامک: ${payload.totalParts}\n`);
-
-    console.log("📱 پیامک‌های آماده ارسال:\n");
-    
-    payload.messages.forEach((msg, i) => {
-        console.log(`[${i+1}/${payload.totalParts}] ${msg}`);
-        console.log("   ↑↑↑ کپی کن ↑↑↑\n");
-    });
-
-    console.log("💡 هر پیامک را جداگانه به شماره Gateway ارسال کنید.");
 }
 
-module.exports = { startSigningFlow };
+module.exports = { startSigningUI };
